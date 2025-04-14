@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MyApp;
+namespace TychoKlaver.FileOrganizer;
 
 class Program
 {
@@ -13,9 +13,16 @@ class Program
     }
 
     public void OrganizeFiles() {
+        string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         // Gets path user enters.
-        Console.Write("Enter the path of the folder to organize:");
-        string path = Console.ReadLine();
+        Console.Write("Enter the relative path from your HOME folder: ");
+        string? relativePath = Console.ReadLine();
+        if (string.IsNullOrWhiteSpace(relativePath)) {
+            System.Console.WriteLine("Invalid input. Please enter a valid path.");
+            return;
+        }
+
+        string path = Path.Combine(homeDir, relativePath);
 
         // Checks if directory exists, otherwise return to start.
         if (!Directory.Exists(path)) {
@@ -28,29 +35,32 @@ class Program
 
         // Loops through all files.
         foreach (string file in files) {
-            // Gets file type of current array index. Returns in lowercase.
             string extension = Path.GetExtension(file).ToLower();
-            // If no extension was found, continue.
-            if (string.IsNullOrEmpty(extension)) continue;
 
-            // Gets extension name, transforms letters to uppercase and added _FILES.
-            string folderName = extension.TrimStart('.').ToUpper() + "_Files";
-            // Combines path with folder name to find target folder.
+            if (extension == ".zip")
+                continue;
+
+            string folderName = extension switch {
+                ".docx" or ".pdf" => "Docs",
+                ".xlsx" or ".pptx" => "OfficeResources",
+                ".txt" => "TextFiles",
+                ".exe" => "Executables",
+                ".jpg" or ".jpeg" or ".png" => "Images",
+                _ => "Rest"
+            };
+
             string targetFolder = Path.Combine(path, folderName);
 
-            // Checks if directory exists, otherwise creates one.
             if (!Directory.Exists(targetFolder))
                 Directory.CreateDirectory(targetFolder);
 
-            // Gets name of current file.
             string fileName = Path.GetFileName(file);
-            // Gets path of destination of file.
             string destPath = Path.Combine(targetFolder, fileName);
 
-            // Checks if file exists already. If not, moves file to needed folder.
             if (!File.Exists(destPath))
                 File.Move(file, destPath);
         }
+
 
         // Visual confirmation that orginization has occured.
         Console.WriteLine("Files are organized!");
